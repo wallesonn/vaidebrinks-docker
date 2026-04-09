@@ -1,0 +1,76 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: vaidebrinks-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-vaidebrinks}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-vaidebrinks}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-web}
+      - traefik.http.routers.vaidebrinks.rule=Host(`${APP_DOMAIN:-vaidebrinks.fun}`)
+      - traefik.http.routers.vaidebrinks.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.vaidebrinks.tls=true
+      - traefik.http.routers.vaidebrinks.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.services.vaidebrinks.loadbalancer.server.port=3000
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: vaidebrinks-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vaidebrinks}
+      POSTGRES_USER: ${POSTGRES_USER:-vaidebrinks}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: vaidebrinks-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+networks:
+  internal:
+    driver: bridge
+  web:
+    external: true
+    name: ${TRAEFIK_NETWORK:-web}
+
+volumes:
+  postgres_data:
+  redis_data:
