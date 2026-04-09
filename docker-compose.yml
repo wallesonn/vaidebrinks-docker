@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    image: ${APP_IMAGE:-wallesonnn/vai-de-brinks:v1.0.0}
     container_name: vaidebrinks-web
     restart: unless-stopped
     environment:
