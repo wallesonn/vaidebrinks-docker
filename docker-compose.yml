@@ -21,7 +21,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=${TRAEFIK_NETWORK:-web}
-      - traefik.http.routers.vaidebrinks.rule=Host(`${APP_DOMAIN:-vaidebrinks.online}`)
+      - traefik.http.routers.vaidebrinks.rule=Host(`${APP_DOMAIN:-vaidebrinks.fun}`)
       - traefik.http.routers.vaidebrinks.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.vaidebrinks.tls=true
       - traefik.http.routers.vaidebrinks.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
